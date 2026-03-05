@@ -7,6 +7,7 @@ from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_pinecone import PineconeVectorStore
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough
+from operator import itemgetter
 
 load_dotenv()
 
@@ -46,10 +47,13 @@ def retrieval_chain_without__lcel(query: str):
 
     return response.content
 
+
 def create_retrieval_chain_with_lcel():
     retrieval_chain = (
-        retriever | format_docs |  
-        prompt_template
+        RunnablePassthrough.assign(
+            context=itemgetter("question") | retriever | format_docs
+            )
+        | prompt_template
         | llm
         | StrOutputParser()
     )
@@ -66,8 +70,16 @@ if __name__ == "__main__":
     #print(result_raw.content)
 
     #Answer without LCEL
-    print("implementation without LCEL")
+    # print("implementation without LCEL")
 
-    result_without_lcel = retrieval_chain_without__lcel(query)
-    print("\nAnswer:")
-    print(result_without_lcel)
+    # result_without_lcel = retrieval_chain_without__lcel(query)
+    # print("\nAnswer:")
+    # print(result_without_lcel)
+
+    print("Implemententation iwth LCEL")
+
+    chain_with_lcel = create_retrieval_chain_with_lcel()
+    result_with_lcel = chain_with_lcel.invoke({"question": query})
+
+    print("Answer:")
+    print(result_with_lcel)
